@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd ">
+    <http:listener-config name="posts-app-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="posts-app-config" api="posts-app.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <configuration-properties doc:name="Configuration properties" doc:id="124efac4-05b0-4d71-8562-9a8794e45194" file="application.properties" />
+	<flow name="posts-app-main">
+        <http:listener config-ref="posts-app-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="posts-app-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="posts-app-console">
+        <http:listener config-ref="posts-app-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="posts-app-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\accounts:application\json:posts-app-config">
+		<flow-ref doc:name="putAccountFlow" doc:id="e907fb6e-d5a3-4424-8b7b-c0ee8ebb6f8b" name="putAccountsFlow"/>
+    </flow>
+    <flow name="put:\users:application\json:posts-app-config">
+		<flow-ref doc:name="putUsersFlow" doc:id="9f23c7b7-d154-4c0c-8edc-5f09e7e07db2" name="putUserFlow"/>
+    </flow>
+    <flow name="delete:\accounts\posts\(id):posts-app-config">
+		<flow-ref doc:name="deleteAccountPostFlow" doc:id="acd9973e-5be7-4b85-a970-15fa04738796" name="deleteAccountsPostByIdFlow"/>
+    </flow>
+    <flow name="delete:\users\(id):posts-app-config">
+		<flow-ref doc:name="deleteUsersFlow" doc:id="4d8f7197-a25f-416c-a0f8-4207845e9b6f" name="deleteUserByIdFlow"/>
+    </flow>
+    <flow name="delete:\categories\(id):posts-app-config">
+		<flow-ref doc:name="deleteCategoryFlow" doc:id="8ca8acd5-8c14-45fb-8d01-97a6a59111de" name="deleteCategoryByIdFlow"/>
+    </flow>
+    <flow name="delete:\accounts\comments\(id):posts-app-config">
+		<flow-ref doc:name="deleteAccountsCommentsFlow" doc:id="b8b48ae5-f69a-47ab-bd95-f41a0498e3fd" name="deleteAccountsCommentByIdFlow"/>
+    </flow>
+    <flow name="get:\accounts:posts-app-config">
+		<flow-ref doc:name="getAccountFlow" doc:id="887ff93b-bbd2-4cc6-8923-8ef4dc80790a" name="getAccountsFlow"/>
+    </flow>
+    <flow name="get:\categories:posts-app-config">
+		<flow-ref doc:name="getCategoriesFlow" doc:id="1b14645d-3a27-45f7-baa2-437b994d73d4" name="getCategoriesFlow"/>
+    </flow>
+    <flow name="get:\comments:posts-app-config">
+		<flow-ref doc:name="getCommentsFlow" doc:id="ff4b082a-ff39-4c57-ad96-10d94c86bf2e" name="getCommentsFlow"/>
+    </flow>
+    <flow name="get:\accounts\comments:posts-app-config">
+		<flow-ref doc:name="getAccountsCommentsFlow" doc:id="fdaae67d-210c-4fe6-aa8f-4bd8c9346099" name="getAccountsCommentsFlow"/>
+    </flow>
+    <flow name="get:\posts:posts-app-config">
+		<flow-ref doc:name="getPostsFlow" doc:id="58564d0b-f8f4-4117-93d3-8008a0a83bbd" name="getPostsFlow"/>
+    </flow>
+    <flow name="get:\users:posts-app-config">
+		<flow-ref doc:name="getUsersFlow" doc:id="9649c7b0-f7fc-419d-b95b-e457a814d598" name="getUsersFlow"/>
+    </flow>
+    <flow name="get:\users\(id):posts-app-config">
+		<flow-ref doc:name="getUserFlow" doc:id="86e236df-facc-47c6-aa13-25ba7b051355" name="getUserByIdFlow"/>
+    </flow>
+    <flow name="get:\comments\(id):posts-app-config">
+		<flow-ref doc:name="getCommentsFlow" doc:id="f9ffc5de-0342-453d-82c9-278074f3043a" name="getCommentsFlow"/>
+    </flow>
+    <flow name="get:\categories\(id):posts-app-config">
+		<flow-ref doc:name="getCategoryFlow" doc:id="5e90cd9b-5e78-4af9-9b7c-2c3ecb1d4785" name="getCategoryByIdFlow"/>
+    </flow>
+    <flow name="get:\posts\(id):posts-app-config">
+		<flow-ref doc:name="getPostFlow" doc:id="884679c5-52ff-4f5c-8a16-aa44dc03a85d" name="getPostByIdFlow"/>
+    </flow>
+    <flow name="get:\accounts\comments\(id):posts-app-config">
+		<flow-ref doc:name="getAccountCommentFlow" doc:id="1d14cbc5-ece1-48e1-8b3c-78e5b1b5a243" name="getAccountsCommentByIdFlow"/>
+    </flow>
+    <flow name="get:\accounts\posts\(id):posts-app-config">
+		<flow-ref doc:name="getAccountPostFlow" doc:id="2de0dbf2-0a7f-42e2-b6b0-1b6b72aa0789" name="getAccountsPostByIdFlow"/>
+    </flow>
+    <flow name="get:\accounts\posts:posts-app-config">
+		<flow-ref doc:name="getAccountPostsFlow" doc:id="fc740110-81a7-4bf5-af31-ece0b89fa6c5" name="getAccountsPostsFlow"/>
+    </flow>
+    <flow name="post:\categories:application\json:posts-app-config">
+		<flow-ref doc:name="postCategoryFlow" doc:id="84e74707-cf1f-48b7-86bf-1bbdef46486e" name="postCategoryFlow"/>
+    </flow>
+    <flow name="post:\accounts\comments:application\json:posts-app-config">
+		<flow-ref doc:name="postAccountCommentFlow" doc:id="bdbd17b2-ea39-4e64-b20f-4b08987893fd" name="postAccountsCommentFlow"/>
+    </flow>
+    <flow name="post:\login:application\json:posts-app-config">
+		<flow-ref doc:name="postLoginFlow" doc:id="bebebdf3-898f-4f6e-b682-695527938a2d" name="postLoginFlow"/>
+    </flow>
+    <flow name="post:\registation:application\json:posts-app-config">
+		<flow-ref doc:name="PostRergistrationFlow" doc:id="6e0ea330-da39-47dd-8c0c-46cbcbe718a6" name="postRegistrationFlow"/>
+    </flow>
+    <flow name="post:\users:application\json:posts-app-config">
+		<flow-ref doc:name="postUserFlow" doc:id="4d1bf5b8-dafd-4236-a3db-7ffccc1f4969" name="postUserFlow"/>
+    </flow>
+    <flow name="post:\accounts\posts:application\json:posts-app-config">
+		<flow-ref doc:name="postAccountPostsFlow" doc:id="4352adb6-01be-4d2e-b254-1f8258b791d4" name="postAccountsPostFlow"/>
+    </flow>
+</mule>
